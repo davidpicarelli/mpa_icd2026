@@ -22,3 +22,7 @@ Desktop.ini
 .~lock.*
 *.tmp
 *.bak
+.Rproj.user
+.httr-oauth
+.DS_Store
+.quarto
