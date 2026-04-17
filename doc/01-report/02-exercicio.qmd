@@ -1,0 +1,52 @@
+---
+title: "Análise de Montantes com Juros Compostos"
+author: "David Picarelli Goncalves"
+format: html
+editor: visual
+---
+
+## Objetivo
+
+Este relatório calcula o montante de uma aplicação financeira com 
+capitalização mensal para diferentes taxas de juros anuais.
+
+```{r}
+# carrega os pacotes necessários
+library(tidyverse)
+
+# cria função para calcular montante com capitalização mensal
+calcular_montante_mensal <- function(capital, taxa_anual, meses) {
+ taxa_mensal <- taxa_anual / 12
+ montante <- capital * (1 + taxa_mensal)^meses
+ return(montante)
+}
+```
+
+```{r}
+# cria o vetor de taxas de juros anuais
+taxas_anuais <- c(0.06, 0.08, 0.10, 0.12, 0.15)
+
+# calcula o montante para cada taxa com map_dbl()
+montantes <- map_dbl(
+ taxas_anuais,
+ \(taxa) calcular_montante_mensal(20000, taxa, 60)
+)
+```
+
+```{r}
+# organiza os resultados em uma tibble
+resultados <- tibble(
+ taxa_pct  = taxas_anuais * 100,
+ montante  = montantes,
+ ganho     = montantes - 20000
+)
+
+# exibe a tibble
+resultados
+```
+
+## Conclusão
+
+A análise mostra que pequenas diferenças na taxa de juros anual 
+geram diferenças significativas no montante acumulado ao longo 
+de 60 meses de capitalização mensal.
