@@ -1,274 +1,170 @@
-
 # Arquivo: 06-lista-resolucao.R
 # Autor(a): David Picarelli Gonçalves
-# Data: 07/05/2026
+# Data: 14/05/2026
 # Objetivo: Resolução da lista de exercícios 6
-
-# Configuracoes globais  ------------------------------------
 
 # define opções globais para exibição de números
 options(digits = 5, scipen = 999)
 
 # carrega os pacotes necessários
-library(here) # para usar caminhos relativos
-library(tidyverse) # meta-pacote que inclui readr, dplyr, tidyr...
+library(here)
+library(tidyverse)
 
 
-# Exercício 1 ---------------------------------------------------------------
+
+
+# Função para implementar o LCG
+lcg <- function(seed, a, c, m, n) {
+  # Parâmetros:
+  # seed: valor inicial (x0)
+  # a: multiplicador
+  # c: incremento
+  # m: módulo
+  # n: número de iterações
   
-set.seed(20260507)
-
-# Vetores de retornos possíveis e probabilidades
-retornos_possiveis <- c(0.06, 0.02, -0.01, -0.04)
-probabilidades <- c(0.15, 0.45, 0.25, 0.15)
-
-# Gerando amostra de 10.000 meses de retornos
-retornos <- sample(
-  retornos_possiveis, size = 10000, replace = TRUE, prob = probabilidades)
-
-# Calculando estatísticas
-valor_esperado <- mean(retornos)
-variancia <- var(retornos)
-desvio_padrao <- sd(retornos)
-prob_retorno_negativo <- mean(retornos < 0)
-
-# Exibindo resultados
-cat("Valor Esperado (Média):", round(valor_esperado, 4), "\n")
-cat("Variância:", round(variancia, 4), "\n")
-cat("Desvio Padrão:", round(desvio_padrao, 4), "\n")
-cat("Probabilidade de Retorno Negativo:", round(prob_retorno_negativo, 4), "\n")
-
-# Exercício 2 -------------------------------------------------------------
-
-set.seed(20260508)
-
-lucros_possiveis <- c(900, 150, -3500)
-probabilidades <- c(0.88, 0.08, 0.04)
-
-# Parte 1: Simulação de 20.000 operações individuais de crédito
-lucros <- sample(
-  lucros_possiveis, size = 20000, replace = TRUE, prob = probabilidades)
-
-valor_esperado <- mean(lucros)
-desvio_padrao <- sd(lucros)
-prob_prejuizo <- mean(lucros < 0)
-
-cat("Parte 1:\n")
-cat("Valor esperado por operação:", round(valor_esperado, 2), "\n")
-cat("Desvio-padrão:", round(desvio_padrao, 2), "\n")
-cat("Probabilidade de prejuízo:", round(prob_prejuizo, 4), "\n\n")
-
-# Parte 2: Simulação de 5.000 carteiras com 80 operações cada
-carteiras <- replicate(
-  5000, sum(sample(
-    lucros_possiveis, size = 80, replace = TRUE, prob = probabilidades)))
-
-valor_esperado_carteira <- mean(carteiras)
-esperado_teorico <- 80 * valor_esperado
-
-cat("Parte 2:\n")
-cat("Valor esperado da carteira:", round(valor_esperado_carteira, 2), "\n")
-cat("Valor esperado teórico (80 * valor médio por operação):", round(
-  esperado_teorico, 2), "\n")
-cat("Diferença:", round(valor_esperado_carteira - esperado_teorico, 2), "\n")
-
-# Exercício 3 -------------------------------------------------------------
-
-# Definindo a semente para reprodutibilidade
-set.seed(20260509)
-
-# Gerando o vetor de estados econômicos para 20.000 meses
-estado <- sample(
-  c("expansao", "recessao"), size = 20000, replace = TRUE, prob = c(0.7, 0.3))
-
-# Criando o tibble e gerando retornos condicionais com map_dbl
-dados <- tibble(estado = estado) %>%
-  mutate(
-    retorno = map_dbl(estado, ~{
-      if (.x == "expansao") {
-        sample(c(0.09, 0.04, -0.02), size = 1, prob = c(0.25, 0.50, 0.25))
-      } else {
-        sample(c(0.03, -0.04, -0.11), size = 1, prob = c(0.15, 0.45, 0.40))
-      }
-    })
-  )
-
-# Valor esperado incondicional
-ve_incondicional <- mean(dados$retorno)
-cat("Valor esperado incondicional do retorno:", round(
-  ve_incondicional, 4), "\n")
-
-# Valor esperado por estado
-ve_por_estado <- dados %>%
-  group_by(estado) %>%
-  summarise(
-    valor_esperado = mean(retorno),
-    n = n(),
-    .groups = "drop"
-  )
-print(ve_por_estado)
-
-# Probabilidade de retorno negativo
-prob_neg <- mean(dados$retorno < 0)
-cat("Probabilidade de retorno negativo:", round(prob_neg, 4), "\n")
-
-# Valores teóricos para comparação
-ve_exp_teor <- 0.25*0.09 + 0.50*0.04 + 0.25*(-0.02)
-ve_rec_teor <- 0.15*0.03 + 0.45*(-0.04) + 0.40*(-0.11)
-ve_incond_teor <- 0.7 * ve_exp_teor + 0.3 * ve_rec_teor
-prob_neg_exp_teor <- 0.25
-prob_neg_rec_teor <- 0.45 + 0.40
-prob_neg_teor <- 0.7 * prob_neg_exp_teor + 0.3 * prob_neg_rec_teor
-
-cat("\nValores teóricos:\n")
-cat("VE Expansão:", round(ve_exp_teor, 4), "\n")
-cat("VE Recessão:", round(ve_rec_teor, 4), "\n")
-cat("VE Incondicional:", round(ve_incond_teor, 4), "\n")
-cat("Prob. Neg. Expansão:", prob_neg_exp_teor, "\n")
-cat("Prob. Neg. Recessão:", prob_neg_rec_teor, "\n")
-cat("Prob. Neg. Incondicional:", round(prob_neg_teor, 4), "\n")
-
-# Interpretação e comparação
-cat("\nInterpretação e Comparação:\n")
-cat("Os valores simulados estão muito próximos dos teóricos, 
-    graças ao grande número de simulações (20.000).\n")
-cat("O VE incondicional é a média ponderada dos VEs condicionais 
-    (70% expansão, 30% recessão).\n")
-cat("Na expansão, retornos são mais altos e menos negativos; na recessão, 
-    mais baixos e negativos.\n")
-cat("Probabilidade de perda é baixa na expansão (25%) e alta na recessão (85%), 
-    resultando em ~43% incondicional.\n")
-
-# Exercício 4 -------------------------------------------------------------
-
-# Definir semente para reprodutibilidade
-set.seed(20260510)
-
-# Simular 15.000 meses de cenários econômicos
-cenario <- sample(c("boom", "estabilidade", "crise"), 
-                  size = 15000, 
-                  replace = TRUE, 
-                  prob = c(0.20, 0.50, 0.30))
-
-# Criar tibble com cenários e calcular retornos RA, RB e RP
-simulacao <- tibble(cenario = cenario) %>%
-  mutate(
-    RA = case_when(
-      cenario == "boom" ~ 0.12,
-      cenario == "estabilidade" ~ 0.03,
-      cenario == "crise" ~ -0.09
-    ),
-    RB = case_when(
-      cenario == "boom" ~ 0.07,
-      cenario == "estabilidade" ~ 0.02,
-      cenario == "crise" ~ -0.04
-    ),
-    RP = 0.6 * RA + 0.4 * RB  # Carteira: 60% RA + 40% RB
-  )
-
-# Calcular estatísticas solicitadas
-media_RA <- mean(simulacao$RA)
-dp_RA <- sd(simulacao$RA)
-media_RB <- mean(simulacao$RB)
-dp_RB <- sd(simulacao$RB)
-cov_AB <- cov(simulacao$RA, simulacao$RB)
-cor_AB <- cor(simulacao$RA, simulacao$RB)
-prob_ambos_neg <- mean(simulacao$RA < 0 & simulacao$RB < 0)
-media_RP <- mean(simulacao$RP)
-dp_RP <- sd(simulacao$RP)
-
-# Exibir resultados
-cat("Média RA:", round(media_RA, 4), "\n")
-cat("Desvio Padrão RA:", round(dp_RA, 4), "\n")
-cat("Média RB:", round(media_RB, 4), "\n")
-cat("Desvio Padrão RB:", round(dp_RB, 4), "\n")
-cat("Covariância (RA, RB):", round(cov_AB, 4), "\n")
-cat("Correlação (RA, RB):", round(cor_AB, 4), "\n")
-cat("Probabilidade (RA < 0 e RB < 0):", round(prob_ambos_neg, 4), "\n")
-cat("Média RP:", round(media_RP, 4), "\n")
-cat("Desvio Padrão RP:", round(dp_RP, 4), "\n")
-
-# Interpretação da diversificação
-cat("\n--- Interpretação da Diversificação ---\n")
-cat("DP RA:", round(dp_RA, 4), " | DP RB:", round(
-  dp_RB, 4), " | DP RP:", round(dp_RP, 4), "\n")
-cat("A diversificação reduz o risco da carteira (DP RP menor que DP RA e DP RB),
-    demonstrando o benefício da combinação de ativos correlacionados.\n")
-
-# Exercício 5 -------------------------------------------------------------
-
-set.seed(20260511)
-
-# Função para simular um mês de operações de crédito
-simular_mes <- function() {
-  # (1) Sorteia o cenário econômico
-  cenario <- sample(c("aquecido", "normal", "fraco"), size = 1, 
-                    prob = c(0.25, 0.50, 0.25))
+  # Inicializar vetores
+  x <- numeric(n + 1)
+  u <- numeric(n)
   
-  # (2) Define número de contratos e probabilidade de inadimplência por cenário
-  if (cenario == "aquecido") {
-    n_contratos <- 120
-    p_inadimplencia <- 0.03
-  } else if (cenario == "normal") {
-    n_contratos <- 90
-    p_inadimplencia <- 0.06
-  } else {  # fraco
-    n_contratos <- 60
-    p_inadimplencia <- 0.10
+  # Definir seed
+  x[1] <- seed
+  
+  # Gerar sequência
+  for (i in 1:n) {
+    x[i + 1] <- (a * x[i] + c) %% m
+    u[i] <- x[i + 1] / m
   }
   
-  # (3) Simula o status de cada contrato
-  status_contratos <- sample(c("adimplente", "inadimplente"), 
-                             size = n_contratos, 
-                             prob = c(1 - p_inadimplencia, p_inadimplencia), 
-                             replace = TRUE)
-  
-  # (4) Conta o número de inadimplentes
-  n_inadimplentes <- sum(status_contratos == "inadimplente")
-  
-  # (5) Calcula o lucro: adimplentes * 300 - inadimplentes * 2500
-  n_adimplentes <- n_contratos - n_inadimplentes
-  lucro <- n_adimplentes * 300 - n_inadimplentes * 2500
-  
-  # (6) Retorna tibble com os resultados
-  tibble(cenario = cenario, 
-         n_inadimplentes = n_inadimplentes, 
-         lucro = lucro)
+  # Retornar tibble com resultados
+  tibble(
+    iteracao = 1:n,
+    x = x[2:(n + 1)],
+    u = u
+  )
 }
 
-# Testa a função uma vez
-cat("Teste da função simular_mes():\n")
-print(simular_mes())
+# Exemplo 1: LCG com parâmetros clássicos
+# Parâmetros: a=1103515245, c=12345, m=2^31
+resultado1 <- lcg(seed = 1, a = 1103515245, c = 12345, m = 2^31, n = 10)
 
-# Simula 10.000 meses
-simulacoes <- replicate(10000, simular_mes(), simplify = FALSE) |> 
-  bind_rows()
+cat("Exemplo 1: LCG com parâmetros clássicos\n")
+print(resultado1)
 
-# Cálculos solicitados
-media_lucro <- mean(simulacoes$lucro)
-desvio_padrao_lucro <- sd(simulacoes$lucro)
-lucro_por_cenario <- simulacoes |> 
-  group_by(cenario) |> 
-  summarise(media_lucro = mean(lucro), .groups = "drop")
+# Exemplo 2: LCG com parâmetros simples (para fins pedagógicos)
+# Parâmetros: a=5, c=1, m=16
+resultado2 <- lcg(seed = 3, a = 5, c = 1, m = 16, n = 10)
 
-covariancia <- cov(simulacoes$n_inadimplentes, simulacoes$lucro)
-correlacao <- cor(simulacoes$n_inadimplentes, simulacoes$lucro)
-prob_perda <- mean(simulacoes$lucro < 0)
+cat("\nExemplo 2: LCG com parâmetros simples (a=5, c=1, m=16)\n")
+print(resultado2)
 
-# Exibe os resultados
-cat("\nResultados da simulação Monte Carlo (10.000 meses):\n")
-cat("Média do lucro: R$", round(media_lucro, 2), "\n")
-cat("Desvio padrão do lucro: R$", round(desvio_padrao_lucro, 2), "\n")
-cat("\nLucro médio por cenário:\n")
-print(lucro_por_cenario)
-cat("Covariância (n_inadimplentes, lucro):", round(covariancia, 2), "\n")
-cat("Correlação (n_inadimplentes, lucro):", round(correlacao, 4), "\n")
-cat("Probabilidade de prejuízo (lucro < 0):", round(prob_perda * 100, 2), "%\n")
+# Análise: Observar o ciclo (período) da sequência
+cat("\nAnálise do Ciclo:\n")
+cat("No Exemplo 2, note que a sequência se repete após alguns passos.\n")
+cat("Isso demonstra o comportamento periódico do LCG (período finito).\n")
 
-# Interpretação da covariância e correlação
-cat("\nInterpretação:\n")
-cat("- A covariância negativa (", round(covariancia, 2), ") 
-    indica que meses com mais inadimplentes tendem a ter lucros menores.\n")
-cat("- A correlação negativa (", round(correlacao, 4), ") 
-    confirma uma relação inversa forte entre o número de inadimplentes e o 
-    lucro.\n")
+
+
+# Função para aproximar integral via Monte Carlo
+monte_carlo_integral <- function(f, a, b, N, seed = NULL) {
+  # Parâmetros:
+  # f: função a ser integrada
+  # a, b: limites de integração
+  # N: número de amostras
+  # seed: semente para reprodutibilidade
+  
+  if (!is.null(seed)) set.seed(seed)
+  
+  # Gerar N amostras uniformes em [a, b]
+  u <- runif(N, min = a, max = b)
+  
+  # Calcular f(u) para cada amostra
+  f_u <- f(u)
+  
+  # Aproximação de Monte Carlo: (b-a) * média(f(u))
+  integral_aprox <- (b - a) * mean(f_u)
+  
+  # Retornar resultado
+  return(integral_aprox)
+}
+
+# ===== INTEGRAL 1: ∫_1^3 x² dx =====
+# Valor exato: [x³/3]_1^3 = 9 - 1/3 = 26/3 ≈ 8.667
+
+f1 <- function(x) x^2
+a1 <- 1
+b1 <- 3
+N <- 1000
+
+# Aproximação Monte Carlo
+aprox1 <- monte_carlo_integral(f1, a1, b1, N, seed = 20260514)
+
+# Valor exato via integrate()
+exato1 <- integrate(f1, a1, b1)$value
+
+# Erro absoluto
+erro1 <- abs(aprox1 - exato1)
+
+cat("===== INTEGRAL 1: ∫_1^3 x² dx =====\n")
+cat("Aproximação Monte Carlo (N=1000):", round(aprox1, 6), "\n")
+cat("Valor exato (integrate()):", round(exato1, 6), "\n")
+cat("Erro absoluto:", round(erro1, 6), "\n")
+cat("Erro relativo (%):", round((erro1 / exato1) * 100, 2), "%\n\n")
+
+# ===== INTEGRAL 2: ∫_0^π sin(x) dx =====
+# Valor exato: [-cos(x)]_0^π = -(-1 - 1) = 2
+
+f2 <- function(x) sin(x)
+a2 <- 0
+b2 <- pi
+N <- 1000
+
+# Aproximação Monte Carlo
+aprox2 <- monte_carlo_integral(f2, a2, b2, N, seed = 20260514)
+
+# Valor exato via integrate()
+exato2 <- integrate(f2, a2, b2)$value
+
+# Erro absoluto
+erro2 <- abs(aprox2 - exato2)
+
+cat("===== INTEGRAL 2: ∫_0^π sin(x) dx =====\n")
+cat("Aproximação Monte Carlo (N=1000):", round(aprox2, 6), "\n")
+cat("Valor exato (integrate()):", round(exato2, 6), "\n")
+cat("Erro absoluto:", round(erro2, 6), "\n")
+cat("Erro relativo (%):", round((erro2 / exato2) * 100, 2), "%\n\n")
+
+# ===== ANÁLISE DE CONVERGÊNCIA =====
+# Testar com diferentes tamanhos de amostra
+
+tamanhos <- c(100, 500, 1000, 5000, 10000)
+resultados <- tibble(
+  N = tamanhos,
+  Aprox_Int1 = NA_real_,
+  Erro_Int1 = NA_real_,
+  Aprox_Int2 = NA_real_,
+  Erro_Int2 = NA_real_
+)
+
+for (i in seq_along(tamanhos)) {
+  n <- tamanhos[i]
+  
+  aprox_i1 <- monte_carlo_integral(f1, a1, b1, n, seed = 20260514)
+  erro_i1 <- abs(aprox_i1 - exato1)
+  
+  aprox_i2 <- monte_carlo_integral(f2, a2, b2, n, seed = 20260514)
+  erro_i2 <- abs(aprox_i2 - exato2)
+  
+  resultados$Aprox_Int1[i] <- aprox_i1
+  resultados$Erro_Int1[i] <- erro_i1
+  resultados$Aprox_Int2[i] <- aprox_i2
+  resultados$Erro_Int2[i] <- erro_i2
+}
+
+cat("===== ANÁLISE DE CONVERGÊNCIA =====\n")
+cat("Integral 1: ∫_1^3 x² dx (Valor exato: 8.667)\n")
+print(resultados %>% select(N, Aprox_Int1, Erro_Int1))
+
+cat("\nIntegral 2: ∫_0^π sin(x) dx (Valor exato: 2.000)\n")
+print(resultados %>% select(N, Aprox_Int2, Erro_Int2))
+
+cat("\nObservação: Conforme N aumenta, o erro diminui, demonstrando a convergência do método de Monte Carlo.\n")
